@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using DeWaveFreeAPI.Models;
+﻿using DeWaveFreeAPI.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
 
 namespace DeWaveFreeAPI.Data;
 
@@ -40,7 +40,11 @@ public partial class DeWaveAPIDbContext : DbContext
 
     public virtual DbSet<CourseInstructor> CourseInstructors { get; set; }
 
+    public virtual DbSet<Role> Roles { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<UserSequence> UserSequences { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -152,7 +156,31 @@ public partial class DeWaveAPIDbContext : DbContext
             entity.Property(e => e.SubmittedAt).HasDefaultValueSql("(getutcdate())");
         });
 
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC075882ED90");
+        });
 
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC072DC8FA20");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne(d => d.Role).WithMany(p => p.Users)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Users_Roles");
+        });
+
+        modelBuilder.Entity<UserSequence>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__UserSequ__3214EC07E4B097EC");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.LastSequence).HasDefaultValue(0);
+            entity.Property(e => e.RolePrefix).IsFixedLength();
+        });
 
         OnModelCreatingPartial(modelBuilder);
     }
