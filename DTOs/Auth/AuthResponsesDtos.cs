@@ -1,6 +1,8 @@
 ﻿namespace DeWaveFreeAPI.DTOs.Auth
 {
-    public class AuthResponsesDtos
-    {
-    }
+    public record LoginResponseDto(
+        string AccessToken,
+        string RefreshToken,
+        UserDto User
+    );
 }

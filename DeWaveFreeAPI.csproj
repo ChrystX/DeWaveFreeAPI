@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <Folder Include="Models\Temp\" />
+    <Folder Include="TempModels\" />
     <Folder Include="wwwroot\uploads\cvs\" />
   </ItemGroup>
 

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace DeWaveFreeAPI.TempModels;
+namespace DeWaveFreeAPI.Models;
 
 [Index("Role", "Month", "Year", Name = "UQ_UserSequences", IsUnique = true)]
 public partial class UserSequence

@@ -1,6 +1,6 @@
 ﻿namespace DeWaveFreeAPI.DTOs.Auth
 {
-    public class PasswordDtos
-    {
-    }
+    public record ForgotPasswordDto(string Email);
+
+    public record ResetPasswordDto(string Token, string NewPassword);
 }
