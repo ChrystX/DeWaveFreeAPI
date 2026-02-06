@@ -45,6 +45,8 @@ builder.Services.AddAuthorization(options =>
 
 // Register your services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IDisplayIdGenerator, DisplayIdGenerator>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
