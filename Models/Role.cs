@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace DeWaveFreeAPI.TempModels;
+namespace DeWaveFreeAPI.Models;
 
 [Index("Name", Name = "UQ__Roles__737584F621FF8B55", IsUnique = true)]
 public partial class Role
