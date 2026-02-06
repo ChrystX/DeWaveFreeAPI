@@ -97,11 +97,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-//Seed admin user (run this once to create your first admin user)
-    using (var scope = app.Services.CreateScope())
-    {
-        var context = scope.ServiceProvider.GetRequiredService<DeWaveAPIDbContext>();
-        UserSeeder.SeedAdminUser(context);
-    }
-
 app.Run();
