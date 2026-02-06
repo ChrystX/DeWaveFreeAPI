@@ -52,8 +52,7 @@ namespace DeWaveFreeAPI.Services
             sequence.LastSequence = (sequence.LastSequence ?? 0) + 1;
             await _context.SaveChangesAsync();
 
-            // Format: ST-01-25-0001 (Prefix-Month-Year-Sequence)
-            return $"{prefix}-{month:D2}-{year % 100:D2}-{sequence.LastSequence:D4}";
+            return $"{prefix}{month:D2}{year % 100:D2}{sequence.LastSequence:D4}";
         }
     }
 }
