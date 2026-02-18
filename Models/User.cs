@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -52,4 +54,18 @@ public partial class User
     [ForeignKey("RoleId")]
     [InverseProperty("Users")]
     public virtual Role Role { get; set; } = null!;
+
+    [InverseProperty("User")]
+    public virtual Student? Student { get; set; }
+
+    [InverseProperty("User")]
+    public virtual Instructor? Instructor { get; set; }
+
+    [InverseProperty("CreatedByUser")]
+    public virtual ICollection<CourseEvent> CourseEvents { get; set; } = new List<CourseEvent>();
+
+    [InverseProperty("User")]
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
 }
+

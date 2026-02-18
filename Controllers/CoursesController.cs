@@ -1,25 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using DeWaveFreeAPI.Data;
+using DeWaveFreeAPI.DTOs;
+using DeWaveFreeAPI.DTOs.CourseInstructor;
 using DeWaveFreeAPI.Models;
-using DeWaveFreeAPI.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DeWaveFreeAPI.Controllers
 {
-    public class CourseDto
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = null!;
-        public string? Description { get; set; }
-        public string? Instructor { get; set; }
-        public int? Duration { get; set; }
-        public int? VideoCount { get; set; }
-        public decimal? Rating { get; set; }
-        public string? Image { get; set; }
-        public DateTime? CreatedAt { get; set; }
-        public int InstructorId { get; set; }
-        public int? CategoryId { get; set; }
-        public bool? IsActive { get; set; }
-    }
 
     [Route("api/courses")]
     [ApiController]
@@ -33,6 +21,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<CourseDto>>> GetCourses()
         {
             var courses = await _dbContext.Courses.ToListAsync();
@@ -48,6 +37,7 @@ namespace DeWaveFreeAPI.Controllers
                 Rating = course.Rating,
                 Image = course.Image,
                 CreatedAt = course.CreatedAt,
+                Price = course.Price,
                 InstructorId = course.InstructorId,
                 CategoryId = course.CategoryId,
                 IsActive = course.IsActive
@@ -56,7 +46,28 @@ namespace DeWaveFreeAPI.Controllers
             return courseDtos;
         }
 
+        [HttpGet("instructor/{instructorId}")]
+        public async Task<ActionResult<IEnumerable<InstructorCourseDto>>> GetCoursesByInstructor(int instructorId)
+        {
+            var courses = await _dbContext.CourseInstructors
+                .Where(ci => ci.InstructorId == instructorId)
+                .Include(ci => ci.Course)
+                .Select(ci => new InstructorCourseDto
+                {
+                    CourseId = ci.CourseId,
+                    Title = ci.Course.Title,
+                    Description = ci.Course.Description,
+                    Image = ci.Course.Image,
+                })
+                .ToListAsync();
+
+            if (!courses.Any()) return NotFound();
+
+            return Ok(courses);
+        }
+
         [HttpGet("active")]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<CourseDto>>> GetActiveCourses()
         {
             var courses = await _dbContext.Courses
@@ -74,6 +85,7 @@ namespace DeWaveFreeAPI.Controllers
                 Rating = course.Rating,
                 Image = course.Image,
                 CreatedAt = course.CreatedAt,
+                Price = course.Price,
                 InstructorId = course.InstructorId,
                 CategoryId = course.CategoryId,
                 IsActive = course.IsActive
@@ -100,6 +112,7 @@ namespace DeWaveFreeAPI.Controllers
                 Rating = course.Rating,
                 Image = course.Image,
                 CreatedAt = course.CreatedAt,
+                Price = course.Price,
                 InstructorId = course.InstructorId,
                 CategoryId = course.CategoryId,
                 IsActive = course.IsActive
@@ -122,6 +135,7 @@ namespace DeWaveFreeAPI.Controllers
                 Rating = dto.Rating,
                 Image = dto.Image,
                 CreatedAt = dto.CreatedAt ?? DateTime.Now,
+                Price = dto.Price ?? 0m,
                 InstructorId = dto.InstructorId,
                 CategoryId = dto.CategoryId,
                 IsActive = dto.IsActive ?? true
@@ -146,6 +160,7 @@ namespace DeWaveFreeAPI.Controllers
                 Rating = dto.Rating,
                 Image = dto.Image,
                 CreatedAt = dto.CreatedAt ?? DateTime.Now,
+                Price = dto.Price ?? 0m,
                 InstructorId = dto.InstructorId,
                 CategoryId = dto.CategoryId,
                 IsActive = dto.IsActive ?? true
@@ -173,6 +188,7 @@ namespace DeWaveFreeAPI.Controllers
             course.Rating = dto.Rating;
             course.Image = dto.Image;
             course.CreatedAt = dto.CreatedAt;
+            course.Price = dto.Price ?? 0m;
             course.InstructorId = dto.InstructorId;
             course.CategoryId = dto.CategoryId;
             course.IsActive = dto.IsActive ?? true;

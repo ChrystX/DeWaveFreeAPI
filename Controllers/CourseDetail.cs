@@ -15,7 +15,6 @@ public class CourseDetailDto
 
 public class CourseDetailCreateDto
 {
-    public int Id { get; set; }
     public int? CourseId { get; set; }
     public string? ShortDescription { get; set; }
     public string? FullDescriptionHtml { get; set; }
@@ -77,15 +76,8 @@ namespace DeWaveFreeAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<CourseDetailDto>> PostCourseDetail([FromBody] CourseDetailCreateDto dto)
         {
-            // Optionally check if the Id already exists to prevent conflicts
-            if (await _dbContext.CourseDetails.AnyAsync(cd => cd.Id == dto.Id))
-            {
-                return Conflict($"CourseDetail with Id {dto.Id} already exists.");
-            }
-
             var cd = new CourseDetail
             {
-                Id = dto.Id,  // assign explicitly
                 CourseId = dto.CourseId,
                 ShortDescription = dto.ShortDescription,
                 FullDescriptionHtml = dto.FullDescriptionHtml,

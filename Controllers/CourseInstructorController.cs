@@ -2,16 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using DeWaveFreeAPI.Models;
 using DeWaveFreeAPI.Data;
+using DeWaveFreeAPI.DTOs.CourseInstructor;
 
 namespace DeWaveFreeAPI.Controllers;
-
-public class CourseInstructorDto
-{
-    public int CourseId { get; set; }
-    public int InstructorId { get; set; }
-    public string? Role { get; set; }
-    public int? SortOrder { get; set; }
-}
 
 [Route("api/[controller]")]
 [ApiController]
@@ -53,7 +46,6 @@ public class CourseInstructorsController : ControllerBase
                 contactEmail = ci.Instructor.ContactEmail,
                 phoneNumber = ci.Instructor.PhoneNumber,
                 certifications = ci.Instructor.Certifications,
-                role = ci.Role,
                 sortOrder = ci.SortOrder
             })
             .ToListAsync();
@@ -79,7 +71,6 @@ public class CourseInstructorsController : ControllerBase
                 title = ci.Course.Title,
                 description = ci.Course.Description,
                 image = ci.Course.Image,
-                role = ci.Role
             })
             .ToListAsync();
 
@@ -93,12 +84,12 @@ public class CourseInstructorsController : ControllerBase
 
     // POST: api/CourseInstructors
     [HttpPost]
-    public async Task<ActionResult<CourseInstructor>> AddCourseInstructor(CourseInstructor courseInstructor)
+    public async Task<ActionResult<CourseInstructor>> AddCourseInstructor(CourseInstructorCreateDto dto)
     {
         // Check if the relationship already exists
         var exists = await _context.CourseInstructors
-            .AnyAsync(ci => ci.CourseId == courseInstructor.CourseId &&
-                           ci.InstructorId == courseInstructor.InstructorId);
+            .AnyAsync(ci => ci.CourseId == dto.CourseId &&
+                           ci.InstructorId == dto.InstructorId);
 
         if (exists)
         {
@@ -108,16 +99,15 @@ public class CourseInstructorsController : ControllerBase
         // Create a new instance with only the properties we need (avoid navigation property issues)
         var newCourseInstructor = new CourseInstructor
         {
-            CourseId = courseInstructor.CourseId,
-            InstructorId = courseInstructor.InstructorId,
-            Role = courseInstructor.Role,
-            SortOrder = courseInstructor.SortOrder
+            CourseId = dto.CourseId,
+            InstructorId = dto.InstructorId,
+            SortOrder = dto.SortOrder
         };
 
         _context.CourseInstructors.Add(newCourseInstructor);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetCourseInstructors), newCourseInstructor);
+        return CreatedAtAction(nameof(GetCourseInstructors), null, newCourseInstructor);
     }
 
     // DELETE: api/CourseInstructors/course/5/instructor/3

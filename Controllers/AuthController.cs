@@ -1,5 +1,6 @@
 ﻿using DeWaveFreeAPI.DTOs;
 using DeWaveFreeAPI.DTOs.Auth;
+using DeWaveFreeAPI.Extension;
 using DeWaveFreeAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +13,13 @@ namespace DeWaveFreeAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IUserService _userService;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(IAuthService authService, IUserService userService, ILogger<AuthController> logger)
         {
             _authService = authService;
+            _userService = userService;
             _logger = logger;
         }
 
@@ -25,7 +28,7 @@ namespace DeWaveFreeAPI.Controllers
         {
             try
             {
-                var result = await _authService.RegisterAsync(request);
+                var result = await _userService.RegisterStudentAsync(request);
                 return Ok(new
                 {
                     message = "Registration successful",
@@ -40,6 +43,31 @@ namespace DeWaveFreeAPI.Controllers
             {
                 _logger.LogError(ex, "Registration failed");
                 return StatusCode(500, new { message = "An error occurred during registration" });
+            }
+        }
+
+        [Authorize(Roles = "admin")]
+        [HttpPost("admin/create-instructor")]
+        public async Task<IActionResult> CreateInstructor([FromBody] RegisterDto request)
+        {
+            try
+            {
+                var result = await _userService.CreateInstructorAsync(request);
+
+                return Ok(new
+                {
+                    message = "Lecturer created successfully",
+                    user = result
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Create lecturer failed");
+                return StatusCode(500, new { message = "An error occurred while creating lecturer" });
             }
         }
 
@@ -69,12 +97,9 @@ namespace DeWaveFreeAPI.Controllers
 
         [HttpPost("logout")]
         [Authorize]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout([FromBody] string refreshToken)
         {
-            var userId = User.FindFirst("userId")?.Value;
-            var username = User.FindFirst(ClaimTypes.Name)?.Value;
-            _logger.LogInformation($"User {username} (ID: {userId}) logged out");
-
+            await _authService.RevokeRefreshTokenAsync(refreshToken);
             return Ok(new { message = "Logged out successfully" });
         }
 
@@ -82,7 +107,7 @@ namespace DeWaveFreeAPI.Controllers
         [Authorize]
         public IActionResult GetCurrentUser()
         {
-            var userId = User.FindFirst("userId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.GetUserId()?.ToString();
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
             var displayId = User.FindFirst("displayId")?.Value;
@@ -92,8 +117,26 @@ namespace DeWaveFreeAPI.Controllers
                 id = userId,
                 username = username,
                 role = role,
-                displayId = displayId
+                displayId = displayId 
             });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto request)
+        {
+            try
+            {
+                var result = await _authService.RefreshTokenAsync(request.RefreshToken);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred" });
+            }
         }
 
         [HttpGet("validate")]
@@ -101,7 +144,7 @@ namespace DeWaveFreeAPI.Controllers
         public IActionResult ValidateToken()
         {
             // If we reach here, the token is valid (middleware already validated it)
-            var userId = User.FindFirst("userId")?.Value;
+            var userId = User.GetUserId()?.ToString();
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
             var expirationClaim = User.FindFirst("exp")?.Value;
@@ -123,6 +166,59 @@ namespace DeWaveFreeAPI.Controllers
                 },
                 expiresAt = expiresAt
             });
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto request)
+        {
+            try
+            {
+                await _authService.SendPasswordResetTokenAsync(request.Email);
+                return Ok(new { message = "If the email exists, a reset link was sent." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Forgot password failed");
+                return StatusCode(500, new { message = "Error processing request" });
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto request)
+        {
+            try
+            {
+                await _authService.ResetPasswordAsync(request);
+                return Ok(new { message = "Password reset successful" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Reset password failed");
+                return StatusCode(500, new { message = "Error resetting password" });
+            }
+        }
+
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto request)
+        {
+            try
+            {
+                await _authService.VerifyEmailAsync(request.Token);
+                return Ok(new { message = "Email verified successfully" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Email verification failed");
+                return StatusCode(500, new { message = "Error verifying email" });
+            }
         }
     }
 }

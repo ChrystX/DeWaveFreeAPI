@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using IOFile = System.IO.File;
 using System.Net;
-using System.Net.Mail;
+using System.Net.Mail;  
 
 namespace DeWaveFreeAPI.Controllers // Replace with your actual namespace
 {

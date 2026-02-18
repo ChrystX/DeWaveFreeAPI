@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeWaveFreeAPI.Models;
 
+[Table("user_sequences")]
 [Index("Role", "Month", "Year", Name = "UQ_UserSequences", IsUnique = true)]
 public partial class UserSequence
 {

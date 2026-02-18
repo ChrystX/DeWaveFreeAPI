@@ -14,9 +14,9 @@ namespace DeWaveFreeAPI.Services
         private readonly DeWaveAPIDbContext _context;
         private static readonly Dictionary<string, string> RolePrefixes = new()
     {
-        { "Student", "ST" },
-        { "Teacher", "TC" },
-        { "Admin", "AD" }
+        { "student", "ST" },
+        { "instructor", "IN" },
+        { "admin", "AD" }
     };
 
         public DisplayIdGenerator(DeWaveAPIDbContext context)

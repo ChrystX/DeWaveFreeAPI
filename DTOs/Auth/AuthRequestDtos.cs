@@ -8,7 +8,8 @@
         bool IsActive,
         bool IsEmailVerified,
         DateTime CreatedAt,
-        DateTime? LastLoginAt
+        DateTime? LastLoginAt,
+        int? InstructorId
     );
     public record UpdateProfileDto(
         string? Email,

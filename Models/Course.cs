@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace DeWaveFreeAPI.Models;
 
@@ -43,6 +43,9 @@ public partial class Course
     [Column("instructor_id")]
     public int InstructorId { get; set; }
 
+    [Column("price", TypeName = "decimal(10,2)")]
+    public decimal Price { get; set; }
+
     [Key]
     public int Id { get; set; }
 
@@ -63,4 +66,16 @@ public partial class Course
 
     [InverseProperty("Course")]
     public virtual ICollection<CourseInstructor> CourseInstructors { get; set; } = new List<CourseInstructor>();
+
+    [InverseProperty("Course")]
+    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+    [InverseProperty("Course")]
+    public virtual ICollection<StudentCourse> StudentCourses { get; set; } = new List<StudentCourse>();
+
+    [InverseProperty("Course")]
+    public virtual ICollection<CourseLearningSection> CourseLearningSections { get; set; } = new List<CourseLearningSection>();
+
+    [InverseProperty("Course")]
+    public virtual ICollection<CourseEventCourse> CourseEventCourses { get; set; } = new List<CourseEventCourse>();
 }

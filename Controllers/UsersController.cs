@@ -1,5 +1,6 @@
 ﻿using DeWaveFreeAPI.Data;
 using DeWaveFreeAPI.DTOs.Auth;
+using DeWaveFreeAPI.Extension;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,7 @@ namespace DeWaveFreeAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+//[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly DeWaveAPIDbContext _context;
@@ -25,10 +26,11 @@ public class UsersController : ControllerBase
     {
         try
         {
-            var userId = int.Parse(User.FindFirst("userId")?.Value ?? "0");
+            var userId = User.GetUserId();
+            if (userId == null) return Unauthorized();
             var user = await _context.Users
                 .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Id == userId);
+                .FirstOrDefaultAsync(u => u.Id == userId.Value);
 
             if (user == null)
                 return NotFound(new { message = "User not found" });
@@ -42,7 +44,8 @@ public class UsersController : ControllerBase
                 user.IsActive,
                 user.IsEmailVerified,
                 user.CreatedAt,
-                user.LastLoginAt
+                user.LastLoginAt,
+                null
             );
 
             return Ok(userDto);
@@ -59,7 +62,8 @@ public class UsersController : ControllerBase
     {
         try
         {
-            var userId = int.Parse(User.FindFirst("userId")?.Value ?? "0");
+            var userId = User.GetUserId();
+            if (userId == null) return Unauthorized();
             var user = await _context.Users.FindAsync(userId);
 
             if (user == null)
@@ -103,7 +107,8 @@ public class UsersController : ControllerBase
     {
         try
         {
-            var userId = int.Parse(User.FindFirst("userId")?.Value ?? "0");
+            var userId = User.GetUserId();
+            if (userId == null) return Unauthorized();
             var user = await _context.Users.FindAsync(userId);
 
             if (user == null)
@@ -148,7 +153,8 @@ public class UsersController : ControllerBase
                 user.IsActive,
                 user.IsEmailVerified,
                 user.CreatedAt,
-                user.LastLoginAt
+                user.LastLoginAt,
+                null
             );
 
             return Ok(userDto);
@@ -182,7 +188,8 @@ public class UsersController : ControllerBase
                     u.IsActive,
                     u.IsEmailVerified,
                     u.CreatedAt,
-                    u.LastLoginAt
+                    u.LastLoginAt,
+                    null
                 ))
                 .ToListAsync();
 

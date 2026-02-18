@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeWaveFreeAPI.Models;
 
-[Table("Category")]
+[Table("category")]
 public partial class Category
 {
     [Key]

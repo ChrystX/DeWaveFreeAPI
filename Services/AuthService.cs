@@ -1,5 +1,4 @@
 ﻿using DeWaveFreeAPI.Data;
-using DeWaveFreeAPI.DTOs;
 using DeWaveFreeAPI.DTOs.Auth;
 using DeWaveFreeAPI.Models;
 using Microsoft.EntityFrameworkCore;
@@ -14,12 +13,13 @@ namespace DeWaveFreeAPI.Services
 {
     public interface IAuthService
     {
-        Task<UserDto> RegisterAsync(RegisterDto request);
         Task<LoginResponseDto> LoginAsync(LoginDto request);
-        Task VerifyEmailAsync(string token);
-        Task SendPasswordResetTokenAsync(string email);
-        Task ResetPasswordAsync(ResetPasswordDto request);
         Task<LoginResponseDto> RefreshTokenAsync(string refreshToken);
+        Task RevokeRefreshTokenAsync(string token);
+        Task SendPasswordResetTokenAsync(string email);
+        Task ResetPasswordAsync(ResetPasswordDto dto);
+        Task VerifyEmailAsync(string token);
+        Task SendAccountSetupEmailAsync(string email);
     }
 
     public class AuthService : IAuthService
@@ -29,8 +29,16 @@ namespace DeWaveFreeAPI.Services
         private readonly IEmailService _emailService;
         private readonly IDisplayIdGenerator _displayIdGenerator;
 
-        private static UserDto MapToUserDto(User user)
+        private async Task<UserDto> MapToUserDto(User user)
         {
+            int? instructorId = null;
+            if (user.Role.Name == "Instructor")
+            {
+                var instructor = await _context.Instructors
+                    .FirstOrDefaultAsync(i => i.UserId == user.Id);
+                instructorId = instructor?.Id;
+            }
+
             return new UserDto(
                 user.Id,
                 user.Username,
@@ -40,7 +48,8 @@ namespace DeWaveFreeAPI.Services
                 user.IsActive,
                 user.IsEmailVerified,
                 user.CreatedAt,
-                user.LastLoginAt
+                user.LastLoginAt,
+                instructorId
             );
         }
 
@@ -52,64 +61,49 @@ namespace DeWaveFreeAPI.Services
             _displayIdGenerator = displayIdGenerator;
         }
 
-        public async Task<UserDto> RegisterAsync(RegisterDto request)
+        public async Task<LoginResponseDto> RefreshTokenAsync(string token)
         {
-            // Check if username exists
-            if (await _context.Users.AnyAsync(u => u.Username == request.Username))
-                throw new InvalidOperationException("Username already exists");
+            var existingToken = await _context.RefreshTokens
+                .Include(rt => rt.User)
+                .ThenInclude(u => u.Role)
+                .FirstOrDefaultAsync(rt => rt.Token == token);
 
-            // Check if email exists
-            if (!string.IsNullOrEmpty(request.Email) &&
-                await _context.Users.AnyAsync(u => u.Email == request.Email))
-                throw new InvalidOperationException("Email already exists");
+            if (existingToken == null)
+                throw new UnauthorizedAccessException("Invalid refresh token");
 
-            // Get role
-            var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == request.RoleName);
-            if (role == null)
-                throw new InvalidOperationException("Invalid role");
+            if (existingToken.ExpiresAt <= DateTime.UtcNow)
+                throw new UnauthorizedAccessException("Refresh token expired");
 
-            // Generate display ID
-            var displayId = await _displayIdGenerator.GenerateAsync(request.RoleName);
+            if (existingToken.IsRevoked)
+                throw new UnauthorizedAccessException("Refresh token already used");
 
-            // Create user
-            var user = new User
+            // Atomic check-and-revoke — only one concurrent request will get rowsAffected = 1
+            var rowsAffected = await _context.RefreshTokens
+                .Where(rt => rt.Token == token && !rt.IsRevoked)
+                .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.IsRevoked, true));
+
+            // Another request already won the race — return 401 cleanly instead of crashing
+            if (rowsAffected == 0)
+                throw new UnauthorizedAccessException("Refresh token already used");
+
+            var newRefreshToken = new RefreshToken
             {
-                Username = request.Username,
-                Email = request.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                RoleId = role.Id,
-                DisplayId = displayId,
-                IsActive = true,
-                IsEmailVerified = false,
-                EmailVerificationToken = GenerateSecureToken(),
-                CreatedAt = DateTime.UtcNow
+                Token = GenerateSecureToken(),
+                UserId = existingToken.UserId,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                CreatedAt = DateTime.UtcNow,
+                IsRevoked = false
             };
 
-            _context.Users.Add(user);
+            _context.RefreshTokens.Add(newRefreshToken);
+            var newAccessToken = GenerateJwtToken(existingToken.User);
             await _context.SaveChangesAsync();
 
-            // Send verification email
-            if (!string.IsNullOrEmpty(user.Email))
-            {
-                await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken);
-            }
-
-            // Load role for mapping
-            await _context.Entry(user).Reference(u => u.Role).LoadAsync();
-
-            return MapToUserDto(user);
-        }
-
-        public async Task<LoginResponseDto> RefreshTokenAsync(string refreshToken)
-        {
-            // TODO: Implement refresh token logic
-            // This requires:
-            // 1. Creating a RefreshToken table/model to store tokens
-            // 2. Validating the refresh token
-            // 3. Generating new access token
-            // 4. Rotating refresh token (optional but recommended)
-
-            throw new NotImplementedException("Refresh token functionality not yet implemented");
+            return new LoginResponseDto(
+                newAccessToken,
+                newRefreshToken.Token,
+                await MapToUserDto(existingToken.User)
+            );
         }
 
         public async Task<LoginResponseDto> LoginAsync(LoginDto request)
@@ -128,29 +122,24 @@ namespace DeWaveFreeAPI.Services
             await _context.SaveChangesAsync();
 
             var accessToken = GenerateJwtToken(user);
-            var refreshToken = GenerateSecureToken();
+            var refreshToken = new RefreshToken
+            {
+                Token = GenerateSecureToken(),
+                UserId = user.Id,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                CreatedAt = DateTime.UtcNow,
+                IsRevoked = false
+            };
+
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync();
 
             return new LoginResponseDto(
                 accessToken,
-                refreshToken,
-                MapToUserDto(user)
+                refreshToken.Token,
+                await MapToUserDto(user)
             );
 
-        }
-
-        public async Task VerifyEmailAsync(string token)
-        {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.EmailVerificationToken == token);
-
-            if (user == null)
-                throw new InvalidOperationException("Invalid verification token");
-
-            user.IsEmailVerified = true;
-            user.EmailVerificationToken = null;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
         }
 
         public string GenerateJwtToken(User user)
@@ -161,7 +150,6 @@ namespace DeWaveFreeAPI.Services
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim("userId", user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Role, user.Role.Name),
                 new Claim("displayId", user.DisplayId),
@@ -180,40 +168,24 @@ namespace DeWaveFreeAPI.Services
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task SendPasswordResetTokenAsync(string email)
+        public async Task RevokeRefreshTokenAsync(string token)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var existing = await _context.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.Token == token);
 
-            if (user == null)
-                return; // Don't reveal if email exists (security best practice)
-
-            user.PasswordResetToken = GenerateSecureToken();
-            user.PasswordResetTokenExpires = DateTime.UtcNow.AddHours(1);
-
-            await _context.SaveChangesAsync();
-            await _emailService.SendPasswordResetEmailAsync(email, user.PasswordResetToken);
-        }
-
-        public async Task ResetPasswordAsync(ResetPasswordDto request)
-        {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.PasswordResetToken == request.Token
-                    && u.PasswordResetTokenExpires > DateTime.UtcNow);
-
-            if (user == null)
-                throw new InvalidOperationException("Invalid or expired reset token");
-
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            user.PasswordResetToken = null;
-            user.PasswordResetTokenExpires = null;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
+            if (existing != null)
+            {
+                existing.IsRevoked = true;
+                await _context.SaveChangesAsync();
+            }
         }
 
         private static string GenerateSecureToken()
         {
-            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+                .Replace("+", "-")
+                .Replace("/", "_")
+                .TrimEnd('=');
         }
 
         public bool ValidateToken(string token)
@@ -241,6 +213,65 @@ namespace DeWaveFreeAPI.Services
             {
                 return false;
             }
+        }
+
+        public async Task SendPasswordResetTokenAsync(string email)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null) return;
+
+            var token = GenerateSecureToken();
+            var encodedToken = Uri.EscapeDataString(token);
+            user.PasswordResetToken = token;
+            user.PasswordResetTokenExpires = DateTime.UtcNow.AddHours(1);
+
+            await _context.SaveChangesAsync();
+
+            await _emailService.SendPasswordResetEmailAsync(user.Email, encodedToken);
+        }
+
+        public async Task ResetPasswordAsync(ResetPasswordDto request)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                u.PasswordResetToken == request.Token &&
+                u.PasswordResetTokenExpires > DateTime.UtcNow);
+
+            if (user == null)
+                throw new InvalidOperationException("Invalid or expired token");
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpires = null;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task VerifyEmailAsync(string token)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.EmailVerificationToken == token);
+
+            if (user == null)
+                throw new InvalidOperationException("Invalid token");
+
+            user.IsEmailVerified = true;
+            user.EmailVerificationToken = null;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task SendAccountSetupEmailAsync(string email)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null) return;
+
+            var token = GenerateSecureToken();
+            user.PasswordResetToken = token;
+            user.PasswordResetTokenExpires = DateTime.UtcNow.AddHours(1);
+
+            await _context.SaveChangesAsync();
+
+            await _emailService.SendAccountSetupEmailAsync(user.Email, token);
         }
     }
 }

@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using DeWaveFreeAPI.Data;
 using DeWaveFreeAPI.Models;
-using DeWaveFreeAPI.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DeWaveFreeAPI.Controllers
 {
@@ -30,6 +31,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
         {
             var categories = await _dbContext.Categories

@@ -10,6 +10,7 @@ namespace DeWaveFreeAPI.Models;
 public partial class CourseDetail
 {
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
     public int Id { get; set; }
 
@@ -22,6 +23,7 @@ public partial class CourseDetail
     public string? FullDescriptionHtml { get; set; }
 
     public string? ToolsRequired { get; set; }
+
     [Column("hero_image")]
     public string? HeroImage { get; set; }
 

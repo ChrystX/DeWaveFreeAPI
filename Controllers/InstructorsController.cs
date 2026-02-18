@@ -2,29 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using DeWaveFreeAPI.Models;
 using DeWaveFreeAPI.Data;
+using DeWaveFreeAPI.DTOs;
 
 namespace DeWaveFreeAPI.Controllers
 {
-    public class InstructorDto
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = null!;
-        public string? Bio { get; set; }
-        public string? ImageUrl { get; set; }
-        public string? ContactEmail { get; set; }
-        public string? PhoneNumber { get; set; }
-        public string? Certifications { get; set; }
-    }
-
-    public class InstructorCreateDto
-    {
-        public string Name { get; set; } = null!;
-        public string? Bio { get; set; }
-        public string? ImageUrl { get; set; }
-        public string? ContactEmail { get; set; }
-        public string? PhoneNumber { get; set; }
-        public string? Certifications { get; set; }
-    }
 
     [Route("api/instructors")]
     [ApiController]
@@ -37,47 +18,34 @@ namespace DeWaveFreeAPI.Controllers
             _dbContext = dbContext;
         }
 
+        private static InstructorDto MapToDto(Instructor i) => new InstructorDto
+        {
+            Id = i.Id,
+            Name = i.Name,
+            Bio = i.Bio,
+            ImageUrl = i.ImageUrl,
+            ContactEmail = i.ContactEmail,
+            PhoneNumber = i.PhoneNumber,
+            Certifications = i.Certifications,
+            Headline = i.Headline,
+            Specialization = i.Specialization,
+            CreatedAt = i.CreatedAt,
+            UpdatedAt = i.UpdatedAt,
+        };
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<InstructorDto>>> GetInstructors()
         {
             var instructors = await _dbContext.Instructors.ToListAsync();
-
-            var instructorsDto = instructors.Select(i => new InstructorDto
-            {
-                Id = i.Id,
-                Name = i.Name,
-                Bio = i.Bio,
-                ImageUrl = i.ImageUrl,
-                ContactEmail = i.ContactEmail,
-                PhoneNumber = i.PhoneNumber,
-                Certifications = i.Certifications,
-            }).ToList();
-
-            return Ok(instructorsDto);
+            return Ok(instructors.Select(MapToDto).ToList());
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<InstructorDto>> GetInstructor(int id)
         {
             var instructor = await _dbContext.Instructors.FindAsync(id);
-
-            if (instructor == null)
-            {
-                return NotFound();
-            }
-
-            var dto = new InstructorDto
-            {
-                Id = instructor.Id,
-                Name = instructor.Name,
-                Bio = instructor.Bio,
-                ImageUrl = instructor.ImageUrl,
-                ContactEmail = instructor.ContactEmail,
-                PhoneNumber = instructor.PhoneNumber,
-                Certifications = instructor.Certifications,
-            };
-
-            return Ok(dto);
+            if (instructor == null) return NotFound();
+            return Ok(MapToDto(instructor));
         }
 
         [HttpPost]
@@ -91,31 +59,30 @@ namespace DeWaveFreeAPI.Controllers
                 ContactEmail = dto.ContactEmail,
                 PhoneNumber = dto.PhoneNumber,
                 Certifications = dto.Certifications,
+                Headline = dto.Headline,
+                Specialization = dto.Specialization,
+                CreatedAt = DateTime.UtcNow,
             };
 
             _dbContext.Instructors.Add(instructor);
             await _dbContext.SaveChangesAsync();
 
-            var resultDto = new InstructorDto
-            {
-                Id = instructor.Id,
-                Name = instructor.Name,
-                Bio = instructor.Bio,
-                ImageUrl = instructor.ImageUrl,
-                ContactEmail = instructor.ContactEmail,
-                PhoneNumber = instructor.PhoneNumber,
-                Certifications = instructor.Certifications,
-            };
+            return CreatedAtAction(nameof(GetInstructor), new { id = instructor.Id }, MapToDto(instructor));
+        }
 
-            return CreatedAtAction(nameof(GetInstructor), new { id = instructor.Id }, resultDto);
+        [HttpGet("by-user/{userId}")]
+        public async Task<ActionResult<InstructorDto>> GetInstructorByUserId(int userId)
+        {
+            var instructor = await _dbContext.Instructors.FirstOrDefaultAsync(i => i.UserId == userId);
+            if (instructor == null) return NotFound();
+            return Ok(MapToDto(instructor));
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> PutInstructor(int id, [FromBody] InstructorCreateDto dto)
         {
             var instructor = await _dbContext.Instructors.FindAsync(id);
-            if (instructor == null)
-                return NotFound();
+            if (instructor == null) return NotFound();
 
             instructor.Name = dto.Name;
             instructor.Bio = dto.Bio;
@@ -123,6 +90,9 @@ namespace DeWaveFreeAPI.Controllers
             instructor.ContactEmail = dto.ContactEmail;
             instructor.PhoneNumber = dto.PhoneNumber;
             instructor.Certifications = dto.Certifications;
+            instructor.Headline = dto.Headline;
+            instructor.Specialization = dto.Specialization;
+            instructor.UpdatedAt = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync();
 
@@ -133,8 +103,7 @@ namespace DeWaveFreeAPI.Controllers
         public async Task<IActionResult> DeleteInstructor(int id)
         {
             var instructor = await _dbContext.Instructors.FindAsync(id);
-            if (instructor == null)
-                return NotFound();
+            if (instructor == null) return NotFound();
 
             _dbContext.Instructors.Remove(instructor);
             await _dbContext.SaveChangesAsync();

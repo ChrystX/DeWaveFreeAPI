@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +10,7 @@ public partial class Instructor
     [Column("name")]
     [StringLength(255)]
     [Unicode(false)]
-    public string Name { get; set; } = null!;
+    public string? Name { get; set; } = null!;
 
     [Column("bio", TypeName = "text")]
     public string? Bio { get; set; }
@@ -38,6 +36,27 @@ public partial class Instructor
     [Key]
     public int Id { get; set; }
 
+    [Column("user_id")]
+    public int? UserId { get; set; }
+
+    [Column("headline")]
+    [StringLength(100)]
+    public string? Headline { get; set; }
+
+    [Column("specialization")]
+    [StringLength(100)]
+    public string? Specialization { get; set; }
+
+    [Column("created_at", TypeName = "datetime")]
+    public DateTime? CreatedAt { get; set; }
+
+    [Column("updated_at", TypeName = "datetime")]
+    public DateTime? UpdatedAt { get; set; }
+
     [InverseProperty("Instructor")]
     public virtual ICollection<CourseInstructor> CourseInstructors { get; set; } = new List<CourseInstructor>();
+
+    [ForeignKey("UserId")]
+    [InverseProperty("Instructor")]
+    public virtual User? User { get; set; }
 }
