@@ -46,6 +46,10 @@ public partial class DeWaveAPIDbContext : DbContext
 
     public virtual DbSet<UserSequence> UserSequences { get; set; }
 
+    public virtual DbSet<Student> Students { get; set; }
+
+    public virtual DbSet<StudentCourse> StudentCourses { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -75,6 +79,22 @@ public partial class DeWaveAPIDbContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__CourseFa__3214EC07576B2278");
 
             entity.HasOne(d => d.Course).WithMany(p => p.CourseFaqs).HasConstraintName("FK_CourseFaq_Course");
+        });
+
+        modelBuilder.Entity<Student>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Students__3214EC07B92067FA");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+        });
+
+        modelBuilder.Entity<StudentCourse>(entity =>
+        {
+            entity.Property(e => e.EnrolledAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne(d => d.Student).WithMany(p => p.StudentCourses).HasConstraintName("FK_StudentCourses_Students");
         });
 
         modelBuilder.Entity<CourseImage>(entity =>
