@@ -26,8 +26,13 @@ namespace DeWaveFreeAPI.Controllers
             var userId = User.GetUserId();
             if (userId == null) return Unauthorized();
 
-            var eventId = await _crudService.CreateEventAsync(dto, userId.Value);
-            return CreatedAtAction(nameof(CreateEvent), new { id = eventId }, new { id = eventId });
+            try
+            {
+                var eventId = await _crudService.CreateEventAsync(dto, userId.Value);
+                return CreatedAtAction(nameof(CreateEvent), new { id = eventId }, new { id = eventId });
+            }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (UnauthorizedAccessException ex) { return Forbid(); }
         }
 
         [HttpPut("{id}")]
@@ -37,8 +42,13 @@ namespace DeWaveFreeAPI.Controllers
             var userId = User.GetUserId();
             if (userId == null) return Unauthorized();
 
-            var updated = await _crudService.UpdateEventAsync(id, dto, userId.Value);
-            return updated ? NoContent() : NotFound();
+            try
+            {
+                var updated = await _crudService.UpdateEventAsync(id, dto, userId.Value);
+                return updated ? NoContent() : NotFound();
+            }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (UnauthorizedAccessException ex) { return Forbid(); }
         }
 
         [HttpDelete("{id}")]

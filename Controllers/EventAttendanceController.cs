@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using DeWaveFreeAPI.Data;
 using DeWaveFreeAPI.DTOs.Events;
+using DeWaveFreeAPI.Extension;
 using DeWaveFreeAPI.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace DeWaveFreeAPI.Controllers
@@ -13,6 +16,7 @@ namespace DeWaveFreeAPI.Controllers
     {
         private readonly IEventAttendanceService _attendanceService;
         private readonly ILogger<EventAttendanceController> _logger;
+        private readonly DeWaveAPIDbContext _dbContext;
 
         public EventAttendanceController(IEventAttendanceService attendanceService,
             ILogger<EventAttendanceController> logger)
@@ -27,7 +31,7 @@ namespace DeWaveFreeAPI.Controllers
         [Authorize(Roles = "student")]
         public async Task<IActionResult> CheckIn(int eventId)
         {
-            var studentId = GetStudentId();
+            var studentId = await GetStudentId();
             if (studentId == null)
                 return Unauthorized("Student identity not found in token.");
 
@@ -36,12 +40,12 @@ namespace DeWaveFreeAPI.Controllers
                 await _attendanceService.CheckInAsync(eventId, studentId.Value);
                 return Ok(new { message = "Checked in successfully." });
             }
-            catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
-            catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during check-in for event {EventId}", eventId);
-                return StatusCode(500, new { error = "An unexpected error occurred." });
+                return StatusCode(500, new { message = "An unexpected message occurred." });
             }
         }
 
@@ -57,12 +61,12 @@ namespace DeWaveFreeAPI.Controllers
                 await _attendanceService.MarkAttendanceAsync(dto);
                 return Ok(new { message = "Attendance marked successfully." });
             }
-            catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
-            catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error marking attendance for event {EventId}", eventId);
-                return StatusCode(500, new { error = "An unexpected error occurred." });
+                return StatusCode(500, new { message = "An unexpected message occurred." });
             }
         }
 
@@ -78,12 +82,12 @@ namespace DeWaveFreeAPI.Controllers
                 await _attendanceService.BulkMarkAttendanceAsync(dto);
                 return Ok(new { message = $"Bulk attendance marked for {dto.Attendances.Count} student(s)." });
             }
-            catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
-            catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error bulk marking attendance for event {EventId}", eventId);
-                return StatusCode(500, new { error = "An unexpected error occurred." });
+                return StatusCode(500, new { message = "An unexpected message occurred." });
             }
         }
 
@@ -98,11 +102,11 @@ namespace DeWaveFreeAPI.Controllers
                 var report = await _attendanceService.GetAttendanceReportAsync(eventId);
                 return Ok(report);
             }
-            catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching attendance report for event {EventId}", eventId);
-                return StatusCode(500, new { error = "An unexpected error occurred." });
+                return StatusCode(500, new { message = "An unexpected message occurred." });
             }
         }
 
@@ -117,11 +121,11 @@ namespace DeWaveFreeAPI.Controllers
                 var stats = await _attendanceService.GetAttendanceStatsAsync(eventId);
                 return Ok(stats);
             }
-            catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching attendance stats for event {EventId}", eventId);
-                return StatusCode(500, new { error = "An unexpected error occurred." });
+                return StatusCode(500, new { message = "An unexpected message occurred." });
             }
         }
 
@@ -131,7 +135,7 @@ namespace DeWaveFreeAPI.Controllers
         [Authorize(Roles = "student")]
         public async Task<IActionResult> GetMyAttendance(int eventId)
         {
-            var studentId = GetStudentId();
+            var studentId = await GetStudentId();
             if (studentId == null)
                 return Unauthorized("Student identity not found in token.");
 
@@ -143,17 +147,18 @@ namespace DeWaveFreeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking attendance for student {StudentId}", studentId);
-                return StatusCode(500, new { error = "An unexpected error occurred." });
+                return StatusCode(500, new { message = "An unexpected message occurred." });
             }
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────────
-        private int? GetStudentId()
+        private async Task<int?> GetStudentId()
         {
-            var claim = User.FindFirstValue(ClaimTypes.NameIdentifier)   // or your custom claim key
-                     ?? User.FindFirstValue("studentId");
+            var userId = User.GetUserId();
+            if (userId == null) return null;
 
-            return int.TryParse(claim, out var id) ? id : null;
+            var student = await _dbContext.Students.FirstOrDefaultAsync(s => s.UserId == userId.Value);
+            return student?.Id;
         }
     }
 }
