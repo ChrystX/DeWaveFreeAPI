@@ -101,7 +101,7 @@ namespace DeWaveFreeAPI.Services
             courseEvent.Capacity = dto.Capacity;
             courseEvent.ThumbnailUrl = dto.ThumbnailUrl;
             courseEvent.PreviewVideoUrl = dto.PreviewVideoUrl;
-            courseEvent.IsActive = dto.IsActive;
+            courseEvent.IsActive = dto.IsActive ?? courseEvent.IsActive;
 
             if (dto.Visibility.ToLower() == VisibilityValues.Course && dto.CourseIds != null)
             {

@@ -33,6 +33,8 @@ namespace DeWaveFreeAPI.Services
 
         public async Task<bool> RegisterForEventAsync(int eventId, int studentId)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
             var courseEvent = await _context.CourseEvents
                 .Include(e => e.EventEnrollments)
                 .Include(e => e.CourseEventCourses)
@@ -56,50 +58,55 @@ namespace DeWaveFreeAPI.Services
 
             // Check if already registered
             var existingEnrollment = await _context.EventEnrollments
-                .FirstOrDefaultAsync(e => e.EventId == eventId && e.StudentId == studentId);
+                    .FirstOrDefaultAsync(e => e.EventId == eventId && e.StudentId == studentId);
 
-            if (existingEnrollment != null)
-            {
-                if (existingEnrollment.Status == "registered")
-                    throw new InvalidOperationException("You are already registered for this event.");
+            if (existingEnrollment != null && existingEnrollment.Status == "registered")
+                throw new InvalidOperationException("You are already registered for this event.");
 
-                // Reactivate cancelled registration
-                existingEnrollment.Status = "registered";
-                existingEnrollment.RegisteredAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync();
-                return true;
-            }
 
-            // Check capacity
             var registeredCount = courseEvent.EventEnrollments.Count(e => e.Status == "registered");
+
             if (courseEvent.Capacity.HasValue && registeredCount >= courseEvent.Capacity.Value)
                 throw new InvalidOperationException("Event is full.");
 
-            // Create enrollment
-            var enrollment = new EventEnrollment
+            if (existingEnrollment != null)
             {
-                EventId = eventId,
-                StudentId = studentId,
-                RegisteredAt = DateTime.UtcNow,
-                Status = "registered"
-            };
-
-            _context.EventEnrollments.Add(enrollment);
-
-            // Create attendance record if tracking is enabled
-            if (courseEvent.TrackAttendance)
+                existingEnrollment.Status = "registered";
+                existingEnrollment.RegisteredAt = DateTime.UtcNow;
+            }
+            else
             {
-                var attendance = new EventAttendance
+                _context.EventEnrollments.Add(new EventEnrollment
                 {
                     EventId = eventId,
                     StudentId = studentId,
-                    Attended = false,
-                    Status = "absent"
-                };
-                _context.EventAttendances.Add(attendance);
+                    RegisteredAt = DateTime.UtcNow,
+                    Status = "registered"
+                });
+
+                if (courseEvent.TrackAttendance)
+                {
+                    _context.EventAttendances.Add(new EventAttendance
+                    {
+                        EventId = eventId,
+                        StudentId = studentId,
+                        Attended = false,
+                        Status = "absent"
+                    });
+                }
             }
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (DbUpdateException)
+            {
+                await transaction.RollbackAsync();
+                throw new InvalidOperationException("Registration failed, please try again.");
+            }
+
             _logger.LogInformation($"student {studentId} registered for event {eventId}");
             return true;
         }

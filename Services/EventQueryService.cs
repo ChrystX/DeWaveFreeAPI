@@ -157,7 +157,7 @@ namespace DeWaveFreeAPI.Services
             var query = _context.CourseEvents
                 .Include(e => e.EventEnrollments)
                 .Include(e => e.EventAttendances)
-                .Where(e => e.CreatedByUserId == userId);
+                .Where(e => e.CreatedByUserId == userId && e.IsActive);
 
             query = EventHelpers.ApplyFilters(query, filter);
 
