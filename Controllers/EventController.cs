@@ -58,8 +58,12 @@ namespace DeWaveFreeAPI.Controllers
             var userId = User.GetUserId();
             if (userId == null) return Unauthorized();
 
-            var deleted = await _crudService.DeleteEventAsync(id, userId.Value);
-            return deleted ? NoContent() : NotFound();
+            try
+            {
+                var deleted = await _crudService.DeleteEventAsync(id, userId.Value);
+                return deleted ? NoContent() : NotFound();
+            }
+            catch (UnauthorizedAccessException) { return Forbid(); }
         }
 
         [HttpPatch("{id}/status")]
@@ -69,8 +73,12 @@ namespace DeWaveFreeAPI.Controllers
             var userId = User.GetUserId();
             if (userId == null) return Unauthorized();
 
-            var toggled = await _crudService.ToggleEventStatusAsync(id, userId.Value, isActive);
-            return toggled ? NoContent() : NotFound();
+            try
+            {
+                var toggled = await _crudService.ToggleEventStatusAsync(id, userId.Value, isActive);
+                return toggled ? NoContent() : NotFound();
+            }
+            catch (UnauthorizedAccessException) { return Forbid(); }
         }
     }
 }

@@ -19,10 +19,12 @@ namespace DeWaveFreeAPI.Controllers
         private readonly DeWaveAPIDbContext _dbContext;
 
         public EventAttendanceController(IEventAttendanceService attendanceService,
-            ILogger<EventAttendanceController> logger)
+            ILogger<EventAttendanceController> logger,
+            DeWaveAPIDbContext dbContext)
         {
             _attendanceService = attendanceService;
             _logger = logger;
+            _dbContext = dbContext;
         }
 
         // POST api/events/{eventId}/attendance/checkin
@@ -45,7 +47,7 @@ namespace DeWaveFreeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during check-in for event {EventId}", eventId);
-                return StatusCode(500, new { message = "An unexpected message occurred." });
+                return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
 
@@ -66,7 +68,7 @@ namespace DeWaveFreeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error marking attendance for event {EventId}", eventId);
-                return StatusCode(500, new { message = "An unexpected message occurred." });
+                return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
 
@@ -87,7 +89,7 @@ namespace DeWaveFreeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error bulk marking attendance for event {EventId}", eventId);
-                return StatusCode(500, new { message = "An unexpected message occurred." });
+                return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
 
@@ -106,7 +108,7 @@ namespace DeWaveFreeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching attendance report for event {EventId}", eventId);
-                return StatusCode(500, new { message = "An unexpected message occurred." });
+                return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
 
@@ -125,7 +127,7 @@ namespace DeWaveFreeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching attendance stats for event {EventId}", eventId);
-                return StatusCode(500, new { message = "An unexpected message occurred." });
+                return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
 
@@ -147,7 +149,7 @@ namespace DeWaveFreeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking attendance for student {StudentId}", studentId);
-                return StatusCode(500, new { message = "An unexpected message occurred." });
+                return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
 
