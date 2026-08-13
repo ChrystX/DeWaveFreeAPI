@@ -123,6 +123,7 @@ namespace DeWaveFreeAPI.Controllers
 
 
         [HttpPost("bulk")]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> PostCoursesBulk([FromBody] IEnumerable<CourseDto> courseDtos)
         {
             var courses = courseDtos.Select(dto => new Course
@@ -148,6 +149,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> PostCourse([FromBody] CourseDto dto)
         {
             var course = new Course
@@ -173,6 +175,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> PutCourse(int id, [FromBody] CourseDto dto)
         {
             if (id != dto.Id) return BadRequest();
@@ -199,6 +202,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteCourse(int id)
         {
             var course = await _dbContext.Courses.FindAsync(id);

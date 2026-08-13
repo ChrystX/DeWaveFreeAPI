@@ -52,7 +52,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Add Authorization with policies
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
 });
 
 //Add Http Client

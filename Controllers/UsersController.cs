@@ -9,7 +9,7 @@ namespace DeWaveFreeAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize]
+[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly DeWaveAPIDbContext _context;
@@ -168,7 +168,7 @@ public class UsersController : ControllerBase
 
     // Admin only endpoint
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         try

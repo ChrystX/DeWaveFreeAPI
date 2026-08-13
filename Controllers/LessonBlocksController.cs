@@ -79,7 +79,7 @@ namespace DeWaveFreeAPI.Controllers
                 }
             }
 
-            bool canSeeAnswers = User.IsInRole("Instructor") || User.IsInRole("Admin");
+            bool canSeeAnswers = User.IsInRole("instructor") || User.IsInRole("admin");
 
             if (!canSeeAnswers)
             {
@@ -111,7 +111,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<ActionResult> CreateBlock(int lessonId, CreateBlockDto dto)
         {
             Console.WriteLine($"blockTypeId={dto.BlockTypeId} contentObjectId={dto.ContentObjectId} dataJson={dto.DataJson}");
@@ -152,7 +152,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpPut("{blockId}")]
-        [Authorize]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> UpdateBlock(int lessonId, int blockId, UpdateBlockDto dto)
         {
             var block = await _dbContext.LessonBlocks
@@ -191,7 +191,7 @@ namespace DeWaveFreeAPI.Controllers
 
         // POST /api/lessons/{lessonId}/blocks/{blockId}/update-to-latest
         [HttpPost("{blockId}/update-to-latest")]
-        [Authorize]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> UpdateToLatest(int lessonId, int blockId)
         {
             var block = await _dbContext.LessonBlocks
@@ -220,7 +220,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpDelete("{blockId}")]
-        [Authorize]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> DeleteBlock(int lessonId, int blockId)
         {
             var block = await _dbContext.LessonBlocks
@@ -236,7 +236,7 @@ namespace DeWaveFreeAPI.Controllers
 
         // POST /api/lessons/{lessonId}/blocks/group
         [HttpPost("group")]
-        [Authorize]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<ActionResult<LessonBlockDto>> GroupBlocks(int lessonId, GroupBlocksDto dto)
         {
             if (dto.BlockIds == null || dto.BlockIds.Count < 2)

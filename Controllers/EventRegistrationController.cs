@@ -14,15 +14,18 @@ namespace DeWaveFreeAPI.Controllers
     public class EventRegistrationController : ControllerBase
     {
         private readonly IEventRegistrationService _registrationService;
+        private readonly IEventAccessService _accessService;
         private readonly DeWaveAPIDbContext _dbContext;
         private readonly ILogger<EventRegistrationController> _logger;
 
         public EventRegistrationController(
             IEventRegistrationService registrationService,
+            IEventAccessService accessService,
             DeWaveAPIDbContext dbContext,
             ILogger<EventRegistrationController> logger)
         {
             _registrationService = registrationService;
+            _accessService = accessService;
             _dbContext = dbContext;
             _logger = logger;
         }
@@ -92,6 +95,22 @@ namespace DeWaveFreeAPI.Controllers
         [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> GetRegistrations(int eventId)
         {
+            var userId = User.GetUserId();
+            if (userId == null) return Unauthorized();
+
+            var courseEvent = await _dbContext.CourseEvents.FirstOrDefaultAsync(e => e.Id == eventId);
+            if (courseEvent == null) return NotFound();
+
+            try
+            {
+                // Only the event's owning instructor (or an admin) may view its roster.
+                await _accessService.EnsureEventOwnerOrAdminAsync(courseEvent, userId.Value);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+
             try
             {
                 var registrations = await _registrationService.GetEventRegistrationsAsync(eventId);

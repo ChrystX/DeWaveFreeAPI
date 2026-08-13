@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DeWaveFreeAPI.Data;
 using DeWaveFreeAPI.Models;
@@ -125,6 +126,7 @@ namespace DeWaveFreeAPI.Controllers
 
         // POST: api/Blogs
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<BlogDto>> CreateBlog(BlogDto blogDto)
         {
             var blog = new Blog
@@ -169,6 +171,7 @@ namespace DeWaveFreeAPI.Controllers
 
         // PUT: api/Blogs/5
         [HttpPut("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> UpdateBlog(int id, BlogDto blogDto)
         {
             if (id != blogDto.Id)
@@ -216,6 +219,7 @@ namespace DeWaveFreeAPI.Controllers
 
         // DELETE: api/Blogs/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteBlog(int id)
         {
             var blog = await _context.Blogs.FindAsync(id);

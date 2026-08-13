@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DeWaveFreeAPI.Models;
 using DeWaveFreeAPI.Data;
@@ -49,6 +50,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<InstructorDto>> PostInstructor([FromBody] InstructorCreateDto dto)
         {
             var instructor = new Instructor
@@ -79,6 +81,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> PutInstructor(int id, [FromBody] InstructorCreateDto dto)
         {
             var instructor = await _dbContext.Instructors.FindAsync(id);
@@ -100,6 +103,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteInstructor(int id)
         {
             var instructor = await _dbContext.Instructors.FindAsync(id);

@@ -97,9 +97,9 @@ namespace DeWaveFreeAPI.Controllers
 
         [HttpPost("logout")]
         [Authorize]
-        public async Task<IActionResult> Logout([FromBody] string refreshToken)
+        public async Task<IActionResult> Logout([FromBody] RefreshRequestDto request)
         {
-            await _authService.RevokeRefreshTokenAsync(refreshToken);
+            await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
             return Ok(new { message = "Logged out successfully" });
         }
 

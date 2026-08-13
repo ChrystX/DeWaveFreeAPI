@@ -28,7 +28,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> LinkQuiz(int lessonId, [FromBody] LinkQuizDto dto)
         {
             if (lessonId == dto.SourceLessonId)
@@ -60,7 +60,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpDelete]
-        [Authorize]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> UnlinkQuiz(int lessonId)
         {
             var lesson = await _db.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId);

@@ -13,7 +13,7 @@ namespace DeWaveFreeAPI.Controllers
         // Controllers/StudentProfileController.cs
         [ApiController]
         [Route("api/student/profile")]
-        [Authorize(Roles = "Student")]
+        [Authorize(Roles = "student")]
         public class StudentProfileController : ControllerBase
         {
             private readonly DeWaveAPIDbContext _dbContext;

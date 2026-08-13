@@ -1,5 +1,6 @@
 ﻿using DeWaveFreeAPI.Data;
 using DeWaveFreeAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -11,6 +12,7 @@ namespace DeWaveFreeAPI.Controllers // Replace with your actual namespace
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "admin")]
     public class ApplicationController : ControllerBase
     {
         private readonly DeWaveAPIDbContext _context; // Replace with your actual DbContext name
@@ -28,6 +30,7 @@ namespace DeWaveFreeAPI.Controllers // Replace with your actual namespace
         }
 
         [HttpPost("submit")]
+        [AllowAnonymous]
         public async Task<IActionResult> SubmitApplication([FromForm] CourseApplicationRequest request)
         {
             try

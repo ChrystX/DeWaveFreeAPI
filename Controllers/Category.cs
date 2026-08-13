@@ -62,6 +62,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<CategoryDto>> PostCategory([FromBody] CategoryCreateDto dto)
         {
             var category = new Category
@@ -84,6 +85,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> PutCategory(int id, [FromBody] CategoryCreateDto dto)
         {
             var category = await _dbContext.Categories.FindAsync(id);
@@ -98,6 +100,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteCategory(int id)
         {
             var category = await _dbContext.Categories.FindAsync(id);

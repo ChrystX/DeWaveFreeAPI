@@ -1,0 +1,709 @@
+diff --git a/Controllers/AdminController.cs b/Controllers/AdminController.cs
+index 8245f63..c62a73d 100644
+--- a/Controllers/AdminController.cs
++++ b/Controllers/AdminController.cs
+@@ -10,7 +10,7 @@ namespace DeWaveFreeAPI.Controllers
+ {
+     [ApiController]
+     [Route("api/admin")]
+-    //[Authorize(Roles = "admin")]
++    [Authorize(Roles = "admin")]
+     public class AdminController : ControllerBase
+     {
+         private readonly DeWaveAPIDbContext _context;
+diff --git a/Controllers/ApplicationController.cs b/Controllers/ApplicationController.cs
+index a536c7d..00bfff0 100644
+--- a/Controllers/ApplicationController.cs
++++ b/Controllers/ApplicationController.cs
+@@ -1,5 +1,6 @@
+ ﻿using DeWaveFreeAPI.Data;
+ using DeWaveFreeAPI.Models;
++using Microsoft.AspNetCore.Authorization;
+ using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
+ using System.ComponentModel.DataAnnotations;
+@@ -11,6 +12,7 @@ namespace DeWaveFreeAPI.Controllers // Replace with your actual namespace
+ {
+     [ApiController]
+     [Route("api/[controller]")]
++    [Authorize(Roles = "admin")]
+     public class ApplicationController : ControllerBase
+     {
+         private readonly DeWaveAPIDbContext _context; // Replace with your actual DbContext name
+@@ -28,6 +30,7 @@ namespace DeWaveFreeAPI.Controllers // Replace with your actual namespace
+         }
+ 
+         [HttpPost("submit")]
++        [AllowAnonymous]
+         public async Task<IActionResult> SubmitApplication([FromForm] CourseApplicationRequest request)
+         {
+             try
+diff --git a/Controllers/AuthController.cs b/Controllers/AuthController.cs
+index 9d4a97a..3573966 100644
+--- a/Controllers/AuthController.cs
++++ b/Controllers/AuthController.cs
+@@ -97,9 +97,9 @@ namespace DeWaveFreeAPI.Controllers
+ 
+         [HttpPost("logout")]
+         [Authorize]
+-        public async Task<IActionResult> Logout([FromBody] string refreshToken)
++        public async Task<IActionResult> Logout([FromBody] RefreshRequestDto request)
+         {
+-            await _authService.RevokeRefreshTokenAsync(refreshToken);
++            await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
+             return Ok(new { message = "Logged out successfully" });
+         }
+ 
+diff --git a/Controllers/BlogController.cs b/Controllers/BlogController.cs
+index 7dc6cd4..e860582 100644
+--- a/Controllers/BlogController.cs
++++ b/Controllers/BlogController.cs
+@@ -1,4 +1,5 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++﻿using Microsoft.AspNetCore.Authorization;
++using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
+ using DeWaveFreeAPI.Data;
+ using DeWaveFreeAPI.Models;
+@@ -125,6 +126,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+         // POST: api/Blogs
+         [HttpPost]
++        [Authorize(Roles = "admin")]
+         public async Task<ActionResult<BlogDto>> CreateBlog(BlogDto blogDto)
+         {
+             var blog = new Blog
+@@ -169,6 +171,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+         // PUT: api/Blogs/5
+         [HttpPut("{id}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> UpdateBlog(int id, BlogDto blogDto)
+         {
+             if (id != blogDto.Id)
+@@ -216,6 +219,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+         // DELETE: api/Blogs/5
+         [HttpDelete("{id}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> DeleteBlog(int id)
+         {
+             var blog = await _context.Blogs.FindAsync(id);
+diff --git a/Controllers/BlogDetailController.cs b/Controllers/BlogDetailController.cs
+index 6428557..5af18e4 100644
+--- a/Controllers/BlogDetailController.cs
++++ b/Controllers/BlogDetailController.cs
+@@ -1,4 +1,5 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++﻿using Microsoft.AspNetCore.Authorization;
++using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
+ using DeWaveFreeAPI.Data;
+ using DeWaveFreeAPI.Models;
+@@ -67,6 +68,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+         // POST: api/BlogDetails
+         [HttpPost]
++        [Authorize(Roles = "admin")]
+         public async Task<ActionResult<BlogDetailDto>> CreateBlogDetail(BlogDetailDto dto)
+         {
+             var bd = new BlogDetail
+@@ -88,6 +90,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+         // PUT: api/BlogDetails/5
+         [HttpPut("{blogId:int}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> UpdateBlogDetail(int blogId, BlogDetailDto dto)
+         {
+             if (blogId != dto.BlogId) return BadRequest();
+@@ -110,6 +113,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+         // DELETE: api/BlogDetails/5
+         [HttpDelete("{blogId:int}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> DeleteBlogDetail(int blogId)
+         {
+             var bd = await _context.BlogDetails.FindAsync(blogId);
+diff --git a/Controllers/BlogTagsController.cs b/Controllers/BlogTagsController.cs
+index 35c59b0..4867a83 100644
+--- a/Controllers/BlogTagsController.cs
++++ b/Controllers/BlogTagsController.cs
+@@ -1,4 +1,5 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++﻿using Microsoft.AspNetCore.Authorization;
++using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
+ using DeWaveFreeAPI.Data;
+ using DeWaveFreeAPI.Models;
+@@ -54,6 +55,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+         // POST: api/BlogTags
+         [HttpPost]
++        [Authorize(Roles = "admin")]
+         public async Task<ActionResult<BlogTagDto>> CreateBlogTag(BlogTagDto dto)
+         {
+             var blogTag = new BlogTag
+@@ -70,6 +72,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+         // PUT: api/BlogTags/5/sample-tag
+         [HttpPut("{blogId:int}/{tag}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> UpdateBlogTag(int blogId, string tag, BlogTagDto dto)
+         {
+             if (blogId != dto.BlogId || tag != dto.Tag)
+@@ -91,6 +94,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+         // DELETE: api/BlogTags/5/sample-tag
+         [HttpDelete("{blogId:int}/{tag}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> DeleteBlogTag(int blogId, string tag)
+         {
+             var blogTag = await _context.BlogTags.FindAsync(blogId, tag);
+diff --git a/Controllers/Category.cs b/Controllers/Category.cs
+index f6c0a9a..fa89ffc 100644
+--- a/Controllers/Category.cs
++++ b/Controllers/Category.cs
+@@ -62,6 +62,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPost]
++        [Authorize(Roles = "admin")]
+         public async Task<ActionResult<CategoryDto>> PostCategory([FromBody] CategoryCreateDto dto)
+         {
+             var category = new Category
+@@ -84,6 +85,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPut("{id}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> PutCategory(int id, [FromBody] CategoryCreateDto dto)
+         {
+             var category = await _dbContext.Categories.FindAsync(id);
+@@ -98,6 +100,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpDelete("{id}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> DeleteCategory(int id)
+         {
+             var category = await _dbContext.Categories.FindAsync(id);
+diff --git a/Controllers/CourseDetail.cs b/Controllers/CourseDetail.cs
+index 2167328..145cca5 100644
+--- a/Controllers/CourseDetail.cs
++++ b/Controllers/CourseDetail.cs
+@@ -1,4 +1,5 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++﻿using Microsoft.AspNetCore.Authorization;
++using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
+ using DeWaveFreeAPI.Models;
+ using DeWaveFreeAPI.Data;
+@@ -74,6 +75,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPost]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<ActionResult<CourseDetailDto>> PostCourseDetail([FromBody] CourseDetailCreateDto dto)
+         {
+             var cd = new CourseDetail
+@@ -103,6 +105,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+ 
+         [HttpPut("{id}")]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> PutCourseDetail(int id, [FromBody] CourseDetailCreateDto dto)
+         {
+             var cd = await _dbContext.CourseDetails.FindAsync(id);
+@@ -119,6 +122,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpDelete("{id}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> DeleteCourseDetail(int id)
+         {
+             var cd = await _dbContext.CourseDetails.FindAsync(id);
+diff --git a/Controllers/CourseFaq.cs b/Controllers/CourseFaq.cs
+index d8b8671..b4bed77 100644
+--- a/Controllers/CourseFaq.cs
++++ b/Controllers/CourseFaq.cs
+@@ -1,4 +1,5 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++﻿using Microsoft.AspNetCore.Authorization;
++using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
+ using DeWaveFreeAPI.Models;
+ using DeWaveFreeAPI.Data;
+@@ -69,6 +70,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPost]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<ActionResult<CourseFaqDto>> PostCourseFaq([FromBody] CourseFaqCreateDto dto)
+         {
+             var faq = new CourseFaq
+@@ -95,6 +97,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPut("{id}")]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> PutCourseFaq(int id, [FromBody] CourseFaqCreateDto dto)
+         {
+             var faq = await _dbContext.CourseFaqs.FindAsync(id);
+@@ -110,6 +113,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpDelete("{id}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> DeleteCourseFaq(int id)
+         {
+             var faq = await _dbContext.CourseFaqs.FindAsync(id);
+diff --git a/Controllers/CourseInstructorController.cs b/Controllers/CourseInstructorController.cs
+index 5bf5a6b..881aae9 100644
+--- a/Controllers/CourseInstructorController.cs
++++ b/Controllers/CourseInstructorController.cs
+@@ -1,4 +1,5 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++﻿using Microsoft.AspNetCore.Authorization;
++using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
+ using DeWaveFreeAPI.Models;
+ using DeWaveFreeAPI.Data;
+@@ -84,6 +85,7 @@ public class CourseInstructorsController : ControllerBase
+ 
+     // POST: api/CourseInstructors
+     [HttpPost]
++    [Authorize(Roles = "admin")]
+     public async Task<ActionResult<CourseInstructor>> AddCourseInstructor(CourseInstructorCreateDto dto)
+     {
+         // Check if the relationship already exists
+@@ -112,6 +114,7 @@ public class CourseInstructorsController : ControllerBase
+ 
+     // DELETE: api/CourseInstructors/course/5/instructor/3
+     [HttpDelete("course/{courseId}/instructor/{instructorId}")]
++    [Authorize(Roles = "admin")]
+     public async Task<IActionResult> RemoveCourseInstructor(int courseId, int instructorId)
+     {
+         var courseInstructor = await _context.CourseInstructors
+diff --git a/Controllers/CourseSectionController.cs b/Controllers/CourseSectionController.cs
+index f8ace30..c0f7c01 100644
+--- a/Controllers/CourseSectionController.cs
++++ b/Controllers/CourseSectionController.cs
+@@ -1,4 +1,5 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++﻿using Microsoft.AspNetCore.Authorization;
++using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
+ using DeWaveFreeAPI.Models;
+ using DeWaveFreeAPI.Data;
+@@ -82,6 +83,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPost]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<ActionResult<CourseSectionDto>> PostCourseSection([FromBody] CourseSectionCreateDto dto)
+         {
+             var cs = new CourseSection
+@@ -114,6 +116,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPut("{id}")]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> PutCourseSection(int id, [FromBody] CourseSectionCreateDto dto)
+         {
+             var cs = await _dbContext.CourseSections.FindAsync(id);
+@@ -133,6 +136,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpDelete("{id}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> DeleteCourseSection(int id)
+         {
+             var cs = await _dbContext.CourseSections.FindAsync(id);
+diff --git a/Controllers/CoursesController.cs b/Controllers/CoursesController.cs
+index 1075550..04b4fbf 100644
+--- a/Controllers/CoursesController.cs
++++ b/Controllers/CoursesController.cs
+@@ -123,6 +123,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+ 
+         [HttpPost("bulk")]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> PostCoursesBulk([FromBody] IEnumerable<CourseDto> courseDtos)
+         {
+             var courses = courseDtos.Select(dto => new Course
+@@ -148,6 +149,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPost]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> PostCourse([FromBody] CourseDto dto)
+         {
+             var course = new Course
+@@ -173,6 +175,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPut("{id}")]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> PutCourse(int id, [FromBody] CourseDto dto)
+         {
+             if (id != dto.Id) return BadRequest();
+@@ -199,6 +202,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpDelete("{id}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> DeleteCourse(int id)
+         {
+             var course = await _dbContext.Courses.FindAsync(id);
+diff --git a/Controllers/EventQueryController.cs b/Controllers/EventQueryController.cs
+index 0389740..54fa1e6 100644
+--- a/Controllers/EventQueryController.cs
++++ b/Controllers/EventQueryController.cs
+@@ -16,15 +16,18 @@ namespace DeWaveFreeAPI.Controllers
+     public class EventQueryController : ControllerBase
+     {
+         private readonly IEventQueryService _queryService;
++        private readonly IEventAccessService _accessService;
+         private readonly DeWaveAPIDbContext _dbContext;
+         private readonly ILogger<EventQueryController> _logger;
+ 
+         public EventQueryController(
+             IEventQueryService queryService,
++            IEventAccessService accessService,
+             DeWaveAPIDbContext dbContext,
+             ILogger<EventQueryController> logger)
+         {
+             _queryService = queryService;
++            _accessService = accessService;
+             _dbContext = dbContext;
+             _logger = logger;
+         }
+@@ -57,6 +60,44 @@ namespace DeWaveFreeAPI.Controllers
+         [HttpGet("{id}")]
+         public async Task<IActionResult> GetEventDetail(int id)
+         {
++            var userId = User.GetUserId();
++            var role = User.FindFirstValue(ClaimTypes.Role);
++            if (userId == null || role == null) return Unauthorized();
++
++            var courseEvent = await _dbContext.CourseEvents.FirstOrDefaultAsync(e => e.Id == id);
++            if (courseEvent == null) return NotFound();
++
++            // Enforce the same visibility rules used by the role-specific detail
++            // endpoints, so this general endpoint can't be used to bypass them
++            // (e.g. a student reading a private course-only event's MeetingUrl).
++            if (string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase))
++            {
++                // admins can view any event
++            }
++            else if (string.Equals(role, "instructor", StringComparison.OrdinalIgnoreCase))
++            {
++                try
++                {
++                    await _accessService.EnsureEventOwnerOrAdminAsync(courseEvent, userId.Value);
++                }
++                catch (UnauthorizedAccessException)
++                {
++                    return Forbid();
++                }
++            }
++            else if (string.Equals(role, "student", StringComparison.OrdinalIgnoreCase))
++            {
++                var student = await _dbContext.Students.FirstOrDefaultAsync(s => s.UserId == userId.Value);
++                if (student == null) return Forbid();
++
++                var canAccess = await _accessService.CanStudentAccessEventAsync(id, student.Id);
++                if (!canAccess) return Forbid();
++            }
++            else
++            {
++                return Forbid();
++            }
++
+             try
+             {
+                 var detail = await _queryService.GetEventDetailAsync(id);
+diff --git a/Controllers/EventRegistrationController.cs b/Controllers/EventRegistrationController.cs
+index 5ca6d5e..03c0f9c 100644
+--- a/Controllers/EventRegistrationController.cs
++++ b/Controllers/EventRegistrationController.cs
+@@ -14,15 +14,18 @@ namespace DeWaveFreeAPI.Controllers
+     public class EventRegistrationController : ControllerBase
+     {
+         private readonly IEventRegistrationService _registrationService;
++        private readonly IEventAccessService _accessService;
+         private readonly DeWaveAPIDbContext _dbContext;
+         private readonly ILogger<EventRegistrationController> _logger;
+ 
+         public EventRegistrationController(
+             IEventRegistrationService registrationService,
++            IEventAccessService accessService,
+             DeWaveAPIDbContext dbContext,
+             ILogger<EventRegistrationController> logger)
+         {
+             _registrationService = registrationService;
++            _accessService = accessService;
+             _dbContext = dbContext;
+             _logger = logger;
+         }
+@@ -92,6 +95,22 @@ namespace DeWaveFreeAPI.Controllers
+         [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> GetRegistrations(int eventId)
+         {
++            var userId = User.GetUserId();
++            if (userId == null) return Unauthorized();
++
++            var courseEvent = await _dbContext.CourseEvents.FirstOrDefaultAsync(e => e.Id == eventId);
++            if (courseEvent == null) return NotFound();
++
++            try
++            {
++                // Only the event's owning instructor (or an admin) may view its roster.
++                await _accessService.EnsureEventOwnerOrAdminAsync(courseEvent, userId.Value);
++            }
++            catch (UnauthorizedAccessException)
++            {
++                return Forbid();
++            }
++
+             try
+             {
+                 var registrations = await _registrationService.GetEventRegistrationsAsync(eventId);
+diff --git a/Controllers/InstructorsController.cs b/Controllers/InstructorsController.cs
+index 65acc5d..e9f864a 100644
+--- a/Controllers/InstructorsController.cs
++++ b/Controllers/InstructorsController.cs
+@@ -1,4 +1,5 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++﻿using Microsoft.AspNetCore.Authorization;
++using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
+ using DeWaveFreeAPI.Models;
+ using DeWaveFreeAPI.Data;
+@@ -49,6 +50,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPost]
++        [Authorize(Roles = "admin")]
+         public async Task<ActionResult<InstructorDto>> PostInstructor([FromBody] InstructorCreateDto dto)
+         {
+             var instructor = new Instructor
+@@ -79,6 +81,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPut("{id}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> PutInstructor(int id, [FromBody] InstructorCreateDto dto)
+         {
+             var instructor = await _dbContext.Instructors.FindAsync(id);
+@@ -100,6 +103,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpDelete("{id}")]
++        [Authorize(Roles = "admin")]
+         public async Task<IActionResult> DeleteInstructor(int id)
+         {
+             var instructor = await _dbContext.Instructors.FindAsync(id);
+diff --git a/Controllers/LessonBlocksController.cs b/Controllers/LessonBlocksController.cs
+index 18efd02..37cffaa 100644
+--- a/Controllers/LessonBlocksController.cs
++++ b/Controllers/LessonBlocksController.cs
+@@ -79,7 +79,7 @@ namespace DeWaveFreeAPI.Controllers
+                 }
+             }
+ 
+-            bool canSeeAnswers = User.IsInRole("Instructor") || User.IsInRole("Admin");
++            bool canSeeAnswers = User.IsInRole("instructor") || User.IsInRole("admin");
+ 
+             if (!canSeeAnswers)
+             {
+@@ -111,7 +111,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPost]
+-        [Authorize]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<ActionResult> CreateBlock(int lessonId, CreateBlockDto dto)
+         {
+             Console.WriteLine($"blockTypeId={dto.BlockTypeId} contentObjectId={dto.ContentObjectId} dataJson={dto.DataJson}");
+@@ -152,7 +152,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPut("{blockId}")]
+-        [Authorize]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> UpdateBlock(int lessonId, int blockId, UpdateBlockDto dto)
+         {
+             var block = await _dbContext.LessonBlocks
+@@ -191,7 +191,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+         // POST /api/lessons/{lessonId}/blocks/{blockId}/update-to-latest
+         [HttpPost("{blockId}/update-to-latest")]
+-        [Authorize]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> UpdateToLatest(int lessonId, int blockId)
+         {
+             var block = await _dbContext.LessonBlocks
+@@ -220,7 +220,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpDelete("{blockId}")]
+-        [Authorize]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> DeleteBlock(int lessonId, int blockId)
+         {
+             var block = await _dbContext.LessonBlocks
+@@ -236,7 +236,7 @@ namespace DeWaveFreeAPI.Controllers
+ 
+         // POST /api/lessons/{lessonId}/blocks/group
+         [HttpPost("group")]
+-        [Authorize]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<ActionResult<LessonBlockDto>> GroupBlocks(int lessonId, GroupBlocksDto dto)
+         {
+             if (dto.BlockIds == null || dto.BlockIds.Count < 2)
+diff --git a/Controllers/LessonsController.cs b/Controllers/LessonsController.cs
+index e6177a2..23f63b2 100644
+--- a/Controllers/LessonsController.cs
++++ b/Controllers/LessonsController.cs
+@@ -44,7 +44,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPatch("/api/lessons/{lessonId}/settings")]
+-        [Authorize]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> UpdateSettings(int lessonId, [FromBody] UpdateExamSettingsDto dto)
+         {
+             var lesson = await _dbContext.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId);
+@@ -56,7 +56,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPost]
+-        [Authorize]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<ActionResult<LessonDto>> CreateLesson(
+              int sectionId,
+              CreateLessonDto dto)
+@@ -140,7 +140,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPut("{lessonId}")]
+-        [Authorize]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> UpdateLesson(
+             int sectionId, int lessonId, UpdateLessonDto dto)
+         {
+@@ -160,7 +160,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpDelete("{lessonId}")]
+-        [Authorize]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> DeleteLesson(int sectionId, int lessonId)
+         {
+             var lesson = await _dbContext.Lessons
+diff --git a/Controllers/LinkQuizController.cs b/Controllers/LinkQuizController.cs
+index 9d079f2..5eab35d 100644
+--- a/Controllers/LinkQuizController.cs
++++ b/Controllers/LinkQuizController.cs
+@@ -28,7 +28,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpPost]
+-        [Authorize]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> LinkQuiz(int lessonId, [FromBody] LinkQuizDto dto)
+         {
+             if (lessonId == dto.SourceLessonId)
+@@ -60,7 +60,7 @@ namespace DeWaveFreeAPI.Controllers
+         }
+ 
+         [HttpDelete]
+-        [Authorize]
++        [Authorize(Roles = "admin,instructor")]
+         public async Task<IActionResult> UnlinkQuiz(int lessonId)
+         {
+             var lesson = await _db.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId);
+diff --git a/Controllers/StudentController.cs b/Controllers/StudentController.cs
+index 8509715..e3defd4 100644
+--- a/Controllers/StudentController.cs
++++ b/Controllers/StudentController.cs
+@@ -1,11 +1,13 @@
+ ﻿using DeWaveFreeAPI.Models;
+ using Microsoft.AspNetCore.Mvc;
++using Microsoft.AspNetCore.Authorization;
+ using DeWaveFreeAPI.Data;
+ using Microsoft.EntityFrameworkCore;
+ using System;
+ 
+ [Route("api/[controller]")]
+ [ApiController]
++[Authorize(Roles = "admin")]
+ public class StudentController : ControllerBase
+ {
+     private readonly DeWaveAPIDbContext _context;
+diff --git a/Controllers/StudentProfileControlller.cs b/Controllers/StudentProfileControlller.cs
+index c16ff8f..63d9fd8 100644
+--- a/Controllers/StudentProfileControlller.cs
++++ b/Controllers/StudentProfileControlller.cs
+@@ -13,7 +13,7 @@ namespace DeWaveFreeAPI.Controllers
+         // Controllers/StudentProfileController.cs
+         [ApiController]
+         [Route("api/student/profile")]
+-        [Authorize(Roles = "Student")]
++        [Authorize(Roles = "student")]
+         public class StudentProfileController : ControllerBase
+         {
+             private readonly DeWaveAPIDbContext _dbContext;
+diff --git a/Controllers/UsersController.cs b/Controllers/UsersController.cs
+index e4bf4e0..557a7b2 100644
+--- a/Controllers/UsersController.cs
++++ b/Controllers/UsersController.cs
+@@ -9,7 +9,7 @@ namespace DeWaveFreeAPI.Controllers;
+ 
+ [ApiController]
+ [Route("api/[controller]")]
+-//[Authorize]
++[Authorize]
+ public class UsersController : ControllerBase
+ {
+     private readonly DeWaveAPIDbContext _context;
+@@ -168,7 +168,7 @@ public class UsersController : ControllerBase
+ 
+     // Admin only endpoint
+     [HttpGet]
+-    [Authorize(Roles = "Admin")]
++    [Authorize(Roles = "admin")]
+     public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+     {
+         try
+diff --git a/Program.cs b/Program.cs
+index 2200ace..bd02a2d 100644
+--- a/Program.cs
++++ b/Program.cs
+@@ -52,7 +52,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+ // Add Authorization with policies
+ builder.Services.AddAuthorization(options =>
+ {
+-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
++    options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
+ });
+ 
+ //Add Http Client
+diff --git a/Services/EventRegistrationService.cs b/Services/EventRegistrationService.cs
+index c6a8810..0f83245 100644
+--- a/Services/EventRegistrationService.cs
++++ b/Services/EventRegistrationService.cs
+@@ -33,7 +33,11 @@ namespace DeWaveFreeAPI.Services
+ 
+         public async Task<bool> RegisterForEventAsync(int eventId, int studentId)
+         {
+-            await using var transaction = await _context.Database.BeginTransactionAsync();
++            // Serializable isolation prevents two concurrent registrations from both
++            // reading "not full yet" and overbooking a capacity-limited event (a plain
++            // READ COMMITTED transaction does not protect against this phantom read).
++            await using var transaction = await _context.Database.BeginTransactionAsync(
++                System.Data.IsolationLevel.Serializable);
+ 
+             var courseEvent = await _context.CourseEvents
+                 .Include(e => e.EventEnrollments)

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DeWaveFreeAPI.Models;
 using DeWaveFreeAPI.Data;
@@ -84,6 +85,7 @@ public class CourseInstructorsController : ControllerBase
 
     // POST: api/CourseInstructors
     [HttpPost]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<CourseInstructor>> AddCourseInstructor(CourseInstructorCreateDto dto)
     {
         // Check if the relationship already exists
@@ -112,6 +114,7 @@ public class CourseInstructorsController : ControllerBase
 
     // DELETE: api/CourseInstructors/course/5/instructor/3
     [HttpDelete("course/{courseId}/instructor/{instructorId}")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> RemoveCourseInstructor(int courseId, int instructorId)
     {
         var courseInstructor = await _context.CourseInstructors

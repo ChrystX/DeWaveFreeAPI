@@ -33,7 +33,11 @@ namespace DeWaveFreeAPI.Services
 
         public async Task<bool> RegisterForEventAsync(int eventId, int studentId)
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync();
+            // Serializable isolation prevents two concurrent registrations from both
+            // reading "not full yet" and overbooking a capacity-limited event (a plain
+            // READ COMMITTED transaction does not protect against this phantom read).
+            await using var transaction = await _context.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable);
 
             var courseEvent = await _context.CourseEvents
                 .Include(e => e.EventEnrollments)

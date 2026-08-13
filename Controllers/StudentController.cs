@@ -1,11 +1,13 @@
 ﻿using DeWaveFreeAPI.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using DeWaveFreeAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Roles = "admin")]
 public class StudentController : ControllerBase
 {
     private readonly DeWaveAPIDbContext _context;

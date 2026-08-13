@@ -16,15 +16,18 @@ namespace DeWaveFreeAPI.Controllers
     public class EventQueryController : ControllerBase
     {
         private readonly IEventQueryService _queryService;
+        private readonly IEventAccessService _accessService;
         private readonly DeWaveAPIDbContext _dbContext;
         private readonly ILogger<EventQueryController> _logger;
 
         public EventQueryController(
             IEventQueryService queryService,
+            IEventAccessService accessService,
             DeWaveAPIDbContext dbContext,
             ILogger<EventQueryController> logger)
         {
             _queryService = queryService;
+            _accessService = accessService;
             _dbContext = dbContext;
             _logger = logger;
         }
@@ -57,6 +60,44 @@ namespace DeWaveFreeAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetEventDetail(int id)
         {
+            var userId = User.GetUserId();
+            var role = User.FindFirstValue(ClaimTypes.Role);
+            if (userId == null || role == null) return Unauthorized();
+
+            var courseEvent = await _dbContext.CourseEvents.FirstOrDefaultAsync(e => e.Id == id);
+            if (courseEvent == null) return NotFound();
+
+            // Enforce the same visibility rules used by the role-specific detail
+            // endpoints, so this general endpoint can't be used to bypass them
+            // (e.g. a student reading a private course-only event's MeetingUrl).
+            if (string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase))
+            {
+                // admins can view any event
+            }
+            else if (string.Equals(role, "instructor", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    await _accessService.EnsureEventOwnerOrAdminAsync(courseEvent, userId.Value);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    return Forbid();
+                }
+            }
+            else if (string.Equals(role, "student", StringComparison.OrdinalIgnoreCase))
+            {
+                var student = await _dbContext.Students.FirstOrDefaultAsync(s => s.UserId == userId.Value);
+                if (student == null) return Forbid();
+
+                var canAccess = await _accessService.CanStudentAccessEventAsync(id, student.Id);
+                if (!canAccess) return Forbid();
+            }
+            else
+            {
+                return Forbid();
+            }
+
             try
             {
                 var detail = await _queryService.GetEventDetailAsync(id);

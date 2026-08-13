@@ -10,7 +10,7 @@ namespace DeWaveFreeAPI.Controllers
 {
     [ApiController]
     [Route("api/admin")]
-    //[Authorize(Roles = "admin")]
+    [Authorize(Roles = "admin")]
     public class AdminController : ControllerBase
     {
         private readonly DeWaveAPIDbContext _context;

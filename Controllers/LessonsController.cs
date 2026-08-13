@@ -44,7 +44,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpPatch("/api/lessons/{lessonId}/settings")]
-        [Authorize]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> UpdateSettings(int lessonId, [FromBody] UpdateExamSettingsDto dto)
         {
             var lesson = await _dbContext.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId);
@@ -56,7 +56,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<ActionResult<LessonDto>> CreateLesson(
              int sectionId,
              CreateLessonDto dto)
@@ -140,7 +140,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpPut("{lessonId}")]
-        [Authorize]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> UpdateLesson(
             int sectionId, int lessonId, UpdateLessonDto dto)
         {
@@ -160,7 +160,7 @@ namespace DeWaveFreeAPI.Controllers
         }
 
         [HttpDelete("{lessonId}")]
-        [Authorize]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> DeleteLesson(int sectionId, int lessonId)
         {
             var lesson = await _dbContext.Lessons
